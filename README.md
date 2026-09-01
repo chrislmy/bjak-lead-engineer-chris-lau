@@ -1,6 +1,8 @@
 # Personal work-experience assistant
 
-Take-home slice: a grounded assistant over committed knowledge sources. Fixtures are placeholders until real CV/LinkedIn content is swapped in.
+Take-home slice: a grounded assistant over committed knowledge sources.
+
+`fixtures/cv.md` and `fixtures/linkedin.md` are **placeholders** (synthetic title conflict included). Replace them in place with real or redacted CV/LinkedIn text; keep the same ids in later goldens.
 
 ## Setup (under 10 minutes once Ollama is installed)
 
