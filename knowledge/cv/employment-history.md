@@ -1,18 +1,11 @@
-<!-- contact details are synthetic -->
+<!-- Written by ingest. -->
 
-# Min Yi “Christopher” Lau
-
-## Profile
-
-Min Yi “Christopher” Lau.
-
-- Email: christopher.lau@example.com
-- Phone: +60 12 0000 0000
-
-## Summary
-
-8-year experienced software engineer specializing in scalable backend systems, with strong full-stack versatility. Proven track record of driving large-scale system design and delivering measurable business impact through performance and reliability improvements. Currently operating at a senior level with lead responsibilities: owns architectural direction, drives cross-functional initiatives, and shapes OKRs while partnering closely with stakeholders to deliver complex, high-impact projects.
-
+---
+id: cv#employment-history
+source: cv
+origin: fixtures/cv.md
+title: Employment History
+---
 ## Employment History
 
 ### Senior Software Engineer (Lead) — Coda
@@ -69,27 +62,3 @@ Worked on developing scalable RESTful microservices for an application used by a
 - Developed a Node.js command line tool to simplify the management of application secrets, currently used by multiple engineering teams across the company.
 
 Technologies: Java 11, Spring Boot, Node.js, Express, Jenkins, AWS
-
-## Personal Work
-
-### Credit Card Sanitizer
-
-Dec 2019 — Present · https://chrislmy.github.io/credit-card-sanitizer
-
-- An open source Java library providing utility functions that sanitize free text and mask sensitive credit card numbers to prevent them from being provided unintentionally.
-
-## Certifications
-
-- AWS Certified Cloud Practitioner
-
-## Education
-
-Sep 2015 — Jun 2018 · BSc Computer Science, University College London (UCL)
-
-Grade: First-Class Honors
-
-## Skills
-
-- Programming languages: Java, Node.js, TypeScript, Golang, Rust
-- Frameworks / libraries: Quarkus, Spring Boot, ExpressJS, ReactJS, Vue.js, Nuxt
-- Infrastructure: DynamoDB, Kafka, Redis, Postgres, ClickHouse, AWS, Docker, Terraform

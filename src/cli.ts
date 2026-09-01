@@ -1,3 +1,6 @@
+import path from "node:path";
+import { ingestAll } from "./sources/index.ts";
+import { rootDir } from "./sources/io.ts";
 import { env } from "./env.ts";
 
 const USAGE = `Personal work-experience assistant
@@ -8,7 +11,7 @@ Usage:
   npx tsx src/cli.ts eval
 
 Commands:
-  ingest   Rebuild knowledge/knowledge.md from fixtures (not implemented yet)
+  ingest   Rebuild knowledge/<source>/ section files and MANIFEST.md from fixtures
   ask      Answer a question from retrieved knowledge (not implemented yet)
   eval     Run the golden evaluation (not implemented yet)
 
@@ -28,7 +31,15 @@ if (
   process.exit(0);
 }
 
-if (command === "ingest" || command === "ask" || command === "eval") {
+if (command === "ingest") {
+  const written = await ingestAll();
+  for (const out of written) {
+    process.stdout.write(`Wrote ${path.relative(rootDir, out)}\n`);
+  }
+  process.exit(0);
+}
+
+if (command === "ask" || command === "eval") {
   process.stdout.write(USAGE);
   process.stderr.write(`Command "${command}" is stubbed until a later milestone.\n`);
   process.exit(0);
