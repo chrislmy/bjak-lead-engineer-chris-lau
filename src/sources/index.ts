@@ -4,6 +4,7 @@ import * as cv from "./cv.ts";
 import * as linkedin from "./linkedin.ts";
 import {
   emptyMarkdownDir,
+  KnowledgeMissingError,
   knowledgeDir,
   manifestPath,
   parseDocument,
@@ -11,6 +12,11 @@ import {
   sourcedKnowledgeDir,
   type KnowledgeDocument,
 } from "./io.ts";
+
+export type RetrievedSource = {
+  source: string;
+  text: string;
+};
 
 // Source modules registered for ingest and retrieve.
 const sources = [cv, linkedin];
@@ -37,6 +43,24 @@ export async function ingestAll(): Promise<string[]> {
   await writeFile(manifestPath, renderManifest(docs), "utf8");
   written.push(manifestPath);
   return written;
+}
+
+export async function retrieveAll(): Promise<RetrievedSource[]> {
+  const docs: RetrievedSource[] = [];
+  for (const source of sources) {
+    try {
+      const text = await source.retrieve();
+      if (text.trim().length > 0) {
+        docs.push({ source: source.id, text });
+      }
+    } catch (error) {
+      if (error instanceof KnowledgeMissingError) {
+        continue;
+      }
+      throw error;
+    }
+  }
+  return docs;
 }
 
 export { cv, linkedin, manifestPath };

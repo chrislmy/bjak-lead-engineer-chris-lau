@@ -192,6 +192,13 @@ export async function ingestFixture(
   });
 }
 
+export class KnowledgeMissingError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "KnowledgeMissingError";
+  }
+}
+
 export async function retrieveSource(id: string): Promise<string> {
   const dir = sourcedKnowledgeDir(id);
   let names: string[];
@@ -199,14 +206,14 @@ export async function retrieveSource(id: string): Promise<string> {
     names = (await readdir(dir)).filter((name) => name.endsWith(".md"));
   } catch (error) {
     if (isEnoent(error)) {
-      throw new Error(
+      throw new KnowledgeMissingError(
         `Missing ${dir}. Run \`npx tsx src/cli.ts ingest\` first.`,
       );
     }
     throw error;
   }
   if (names.length === 0) {
-    throw new Error(
+    throw new KnowledgeMissingError(
       `No documents in ${dir}. Run \`npx tsx src/cli.ts ingest\` first.`,
     );
   }

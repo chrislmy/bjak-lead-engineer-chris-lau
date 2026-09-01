@@ -13,9 +13,9 @@ Edit this file when a fixture is added or replaced.
 | Source | File | Split | Notes |
 | --- | --- | --- | --- |
 | cv | `fixtures/cv.md` | `##` headings | Real CV. Contact lines are synthetic (`christopher.lau@example.com`, `+60 12 0000 0000`). |
-| linkedin | `fixtures/linkedin.md` | single file | Placeholder. Title is Lead Software Engineer (intentional conflict with the CV Senior title). Includes `experimentation analytics`, which the CV does not. |
+| linkedin | `fixtures/linkedin.md` | single file | Slim CV. Headline is Lead Software Engineer (labelled conflict with CV Senior Software Engineer (Lead)). Includes `experimentation analytics`, which the CV does not. |
 
-Swap LinkedIn for a real export when you have one. Keep ids `cv` and `linkedin`.
+Keep ids `cv` and `linkedin`.
 
 ## Limits
 

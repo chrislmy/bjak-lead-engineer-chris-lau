@@ -1,6 +1,6 @@
-# Personal work-experience assistant ó implementation plan
+# Personal work-experience assistant ù implementation plan
 
-Time box: ~120 minutes. Goal: a thin, grounded, evaluable slice ó not a complete system.
+Time box: ~120 minutes. Goal: a thin, grounded, evaluable slice ù not a complete system.
 
 Fixtures are **placeholders** until real CV / LinkedIn content is dropped in. Tickets below use a stable placeholder schema so ingest, retrieve, `ask`, and goldens can be wired without waiting on biography.
 
@@ -12,7 +12,7 @@ Fixtures are **placeholders** until real CV / LinkedIn content is dropped in. Ti
 
 | Decision | Choice |
 |---|---|
-| Generator | Ollama `llama3.2` via OpenAI SDK (`baseURL` ? `http://localhost:11434/v1`) |
+| Generator | Ollama `qwen3:4b` via OpenAI SDK (`baseURL` ? `http://localhost:11434/v1`) |
 | Judge | Ollama `llama3.1:8b` via DeepEval `OllamaModel` |
 | Knowledge | Markdown fixtures ? tagged `knowledge.md` |
 | Retrieve | Full documents from **both** sources every time (query unused) |
@@ -25,7 +25,7 @@ Fixtures are **placeholders** until real CV / LinkedIn content is dropped in. Ti
 
 ---
 
-## Still open (does not block M1ñM7)
+## Still open (does not block M1ùM7)
 
 - Repo name: `bjak-lead-engineer-<yourname>`
 - Real vs synthetic labels on fixtures (fill when replacing placeholders)
@@ -73,16 +73,16 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 ---
 
-## M1 ó Runnable skeleton
+## M1 ù Runnable skeleton
 
 **Deliverable:** Empty app that installs and prints CLI usage.
 
 **In**
 
 - `package.json`, `tsconfig.json`, `.gitignore`, `.env.example`
-- `src/cli.ts` ó usage only (`ingest` / `ask` / `eval` stub)
-- `src/env.ts` ó read `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `JUDGE_MODEL`
-- README stub: Ollama install, `ollama pull llama3.2`, `ollama pull llama3.1:8b`
+- `src/cli.ts` ù usage only (`ingest` / `ask` / `eval` stub)
+- `src/env.ts` ù read `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `JUDGE_MODEL`
+- README stub: Ollama install, `ollama pull qwen3:4b`, `ollama pull llama3.1:8b`
 
 **Out**
 
@@ -98,7 +98,7 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 ---
 
-## M2 ó Placeholder knowledge sources
+## M2 ù Placeholder knowledge sources
 
 **Deliverable:** Committed fixtures a reviewer can open without running code.
 
@@ -106,8 +106,8 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 **In**
 
-- `fixtures/cv.md` ó placeholder Coda / ClickHouse / Data Hub / Senior title
-- `fixtures/linkedin.md` ó Lead title + one extra bullet + synthetic label
+- `fixtures/cv.md` ù placeholder Coda / ClickHouse / Data Hub / Senior title
+- `fixtures/linkedin.md` ù Lead title + one extra bullet + synthetic label
 - One line in README: what is placeholder vs what you will replace
 
 **Out**
@@ -125,7 +125,7 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 ---
 
-## M3 ó Ingest both sources
+## M3 ù Ingest both sources
 
 **Deliverable:** `ingest` writes tagged `knowledge/knowledge.md` from both fixtures.
 
@@ -133,8 +133,8 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 **In**
 
-- `src/sources/cv.ts`, `src/sources/linkedin.ts` ó each `ingest()` + `retrieve()` (retrieve can wait until M4 if you prefer, but the module should exist)
-- `src/sources/index.ts` ó `ingestAll()`
+- `src/sources/cv.ts`, `src/sources/linkedin.ts` ù each `ingest()` + `retrieve()` (retrieve can wait until M4 if you prefer, but the module should exist)
+- `src/sources/index.ts` ù `ingestAll()`
 - `src/cli.ts ingest` wired
 
 **Out**
@@ -146,13 +146,13 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 - [ ] `npx tsx src/cli.ts ingest` regenerates `knowledge/knowledge.md`
 - [ ] File contains both sources with `source:cv` and `source:linkedin` fences (or equivalent tags)
 - [ ] Conflict is still present after ingest (both titles)
-- [ ] Adding a third source is ìnew file + one array entryî (stated in a code comment or README)
+- [ ] Adding a third source is ùnew file + one array entryù (stated in a code comment or README)
 
 **Commit:** `feat: ingest fixtures into tagged knowledge`
 
 ---
 
-## M4 ó Grounded `ask`
+## M4 ù Grounded `ask`
 
 **Deliverable:** Ask a question; get an answer plus sources, or a clear refusal. Conflicts not silently resolved.
 
@@ -160,9 +160,9 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 **In**
 
-- `retrieveAll()` ó both full docs; **do not use the query**
-- `src/llm/client.ts` ó OpenAI SDK, env `baseURL` / `apiKey` / `model`
-- `src/assistant.ts` ó prompt: stay in supplied context; refuse if insufficient; surface disagreements
+- `retrieveAll()` ù both full docs; **do not use the query**
+- `src/llm/client.ts` ù OpenAI SDK, env `baseURL` / `apiKey` / `model`
+- `src/assistant.ts` ù prompt: stay in supplied context; refuse if insufficient; surface disagreements
 - Structured enough output to print sources (`{ answer, citations }` or equivalent)
 - Empty retrieval or LLM timeout/down ? static fallback, **no invented facts**
 - `src/cli.ts ask "..."` prints answer + sources
@@ -182,7 +182,7 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 ---
 
-## M5 ó Frozen golden dataset
+## M5 ù Frozen golden dataset
 
 **Deliverable:** 25 labelled cases committed; contract helper for DeepEval.
 
@@ -190,8 +190,8 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 **In**
 
-- `eval/golden.json` ó 25 cases (8 direct, 4 multi_source, 4 ambiguous, 4 unanswerable, 5 adversarial)
-- `eval/golden.ts` ó types + `contractText(g)` building `BEHAVIOUR` / `MUST CONTAIN` / `MUST NOT CLAIM`
+- `eval/golden.json` ù 25 cases (8 direct, 4 multi_source, 4 ambiguous, 4 unanswerable, 5 adversarial)
+- `eval/golden.ts` ù types + `contractText(g)` building `BEHAVIOUR` / `MUST CONTAIN` / `MUST NOT CLAIM`
 - Every `mustContain` substring exists in fixtures (or in `knowledge.md` after ingest)
 
 **Out**
@@ -202,14 +202,14 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 - [ ] Counts: 8 / 4 / 4 / 4 / 5
 - [ ] `behaviour` is `answer` | `refuse` | `conflict`
-- [ ] Refusal suite is defined as `behaviour === "refuse"` (not ìall adversarialî)
+- [ ] Refusal suite is defined as `behaviour === "refuse"` (not ùall adversarialù)
 - [ ] `round-up-metrics` (or equivalent) is `adversarial` + `answer` so it is **not** in the refusal set
 
 **Commit:** `test: add 25 golden cases`
 
 ---
 
-## M6 ó LabelContract + Refusal eval (required)
+## M6 ù LabelContract + Refusal eval (required)
 
 **Deliverable:** One command scores goldens with two GEval metrics; results committed.
 
@@ -217,10 +217,10 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 **In**
 
-- `eval/geval.ts` ó `OllamaModel` judge `llama3.1:8b`; `labelContract`; `refusalInjection`
-- `eval/assistant.eval.ts` ó `it.each` all goldens ? LabelContract; filter `behaviour === "refuse"` ? RefusalInjection
-- `vitest.config.ts` ó long `testTimeout` / `hookTimeout`
-- `eval/results/` ó last run output (table or DeepEval report) plus **two** failure write-ups
+- `eval/geval.ts` ù `OllamaModel` judge `llama3.1:8b`; `labelContract`; `refusalInjection`
+- `eval/assistant.eval.ts` ù `it.each` all goldens ? LabelContract; filter `behaviour === "refuse"` ? RefusalInjection
+- `vitest.config.ts` ù long `testTimeout` / `hookTimeout`
+- `eval/results/` ù last run output (table or DeepEval report) plus **two** failure write-ups
 - Spot-check: you vs 8B on 5 cases (one per category); agreement noted in results or README
 
 **Out**
@@ -236,14 +236,14 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 - [ ] Pass bar stated **before** interpreting results (e.g. GEval ? 0.7)
 - [ ] Suite formula written: cases passing all **applicable** metrics / n
 - [ ] `evaluationSteps` committed (they are the judge prompt)
-- [ ] Two real failures explained (not ìwill fail laterî)
+- [ ] Two real failures explained (not ùwill fail laterù)
 
 **Commit:** `test: deepeval label and refusal suite`  
 **Commit:** `docs: commit eval results and failure notes`
 
 ---
 
-## M6b ó Faithfulness (optional)
+## M6b ù Faithfulness (optional)
 
 **Deliverable:** `FaithfulnessMetric` on all 25 with `retrievalContext` from `retrieveAll()`.
 
@@ -261,7 +261,7 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 ---
 
-## M7 ó CLI as the product
+## M7 ù CLI as the product
 
 **Deliverable:** Three documented commands; `eval` is one path a reviewer can copy.
 
@@ -269,7 +269,7 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 **In**
 
-- `ingest` / `ask` / `eval` (`eval` may shell `npx deepeval test run Ö`)
+- `ingest` / `ask` / `eval` (`eval` may shell `npx deepeval test run ù`)
 - `ask` always shows sources or the fallback
 
 **Out**
@@ -285,7 +285,7 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 
 ---
 
-## M8 ó Leadership write-up and submission
+## M8 ù Leadership write-up and submission
 
 **Deliverable:** README is the entry point; history is readable; tag exists.
 
@@ -294,7 +294,7 @@ Each ticket is a **deliverable**: something a reviewer can run or read without t
 **In**
 
 - README: what it is; install/run; architecture + why; eval approach + results; limitations + next three; AI-use; **time spent** (honest, including overrun)
-- `docs/decisions.md` (or README section): 3ñ5 ADRs (full-doc vs query retrieve; OpenAI SDK + Ollama; conflict policy; GEval vs custom matcher; skip YAML-as-source)
+- `docs/decisions.md` (or README section): 3ù5 ADRs (full-doc vs query retrieve; OpenAI SDK + Ollama; conflict policy; GEval vs custom matcher; skip YAML-as-source)
 - Cuts + next three
 - One thing you refused to let a model decide
 - Self-review: two PR comments
@@ -326,7 +326,7 @@ Vector DB, embeddings, SQLite/FTS5, LangChain, PDF parser, query-dependent retri
 
 Cut in this order: M6b ? extra source files (flatten retrieve) ? separate `docs/decisions.md` (fold into README).
 
-Never cut: M2ñM4 behaviours (sources, refuse, conflict), M5 count/categories, M6 run + two failures, M8 README + time spent.
+Never cut: M2ùM4 behaviours (sources, refuse, conflict), M5 count/categories, M6 run + two failures, M8 README + time spent.
 
 ---
 

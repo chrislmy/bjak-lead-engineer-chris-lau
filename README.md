@@ -2,14 +2,14 @@
 
 Take-home slice: a grounded assistant over committed knowledge sources.
 
-`fixtures/cv.md` is the real CV with synthetic contact details (`example.com` / dummy phone). `fixtures/linkedin.md` is still a **placeholder** with a synthetic title conflict. Keep the same source ids in later goldens.
+`fixtures/cv.md` is the real CV with synthetic contact details (`example.com` / dummy phone). `fixtures/linkedin.md` is a slim version of that CV; the Lead vs Senior title is a labelled synthetic conflict. Keep the same source ids in later goldens.
 
 ## Setup (under 10 minutes once Ollama is installed)
 
 1. Install [Ollama](https://ollama.com), then pull the generator and judge:
 
    ```bash
-   ollama pull llama3.2
+   ollama pull qwen3:4b
    ollama pull llama3.1:8b
    ```
 
@@ -27,4 +27,13 @@ Take-home slice: a grounded assistant over committed knowledge sources.
    npx tsx src/cli.ts ingest
    ```
 
-`knowledge/SOURCES.md` describes the fixtures. `ask` and `eval` are stubbed. A new knowledge source is a module in `src/sources/`, one extra array entry, a fixture, then ingest. See `plan.md`.
+`knowledge/SOURCES.md` describes the fixtures. A new knowledge source is a module in `src/sources/`, one extra array entry, a fixture, then ingest. See `plan.md`.
+
+4. Ask a question (Ollama must be running; `eval` is still stubbed):
+
+   ```bash
+   npx tsx src/cli.ts ask "What did you do with ClickHouse?"
+   npx tsx src/cli.ts ask --think "What did you do with ClickHouse?"
+   ```
+
+   `ask` always ends with `thought for <duration>`. `--think` also prints the model’s reasoning on stderr (or `ASK_SHOW_THINKING=1`).

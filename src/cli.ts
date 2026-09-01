@@ -1,4 +1,5 @@
 import path from "node:path";
+import { ask, formatThoughtDuration } from "./assistant.ts";
 import { ingestAll } from "./sources/index.ts";
 import { rootDir } from "./sources/io.ts";
 import { env } from "./env.ts";
@@ -8,11 +9,13 @@ const USAGE = `Personal work-experience assistant
 Usage:
   npx tsx src/cli.ts ingest
   npx tsx src/cli.ts ask "<question>"
+  npx tsx src/cli.ts ask --think "<question>"
   npx tsx src/cli.ts eval
 
 Commands:
   ingest   Rebuild knowledge/<source>/ section files and MANIFEST.md from fixtures
-  ask      Answer a question from retrieved knowledge (not implemented yet)
+  ask      Answer a question from retrieved knowledge
+           --think   print model reasoning on stderr
   eval     Run the golden evaluation (not implemented yet)
 
 Generator model: ${env.openaiModel}
@@ -39,7 +42,47 @@ if (command === "ingest") {
   process.exit(0);
 }
 
-if (command === "ask" || command === "eval") {
+if (command === "ask") {
+  const args = process.argv.slice(3);
+  const showThinking = args.includes("--think") || env.showThinking;
+  const question = args.filter((arg) => arg !== "--think").join(" ").trim();
+  if (question.length === 0) {
+    process.stderr.write(
+      `Usage: npx tsx src/cli.ts ask [--think] "<question>"\n`,
+    );
+    process.exit(1);
+  }
+  let streamedThinking = false;
+  if (showThinking) {
+    process.stderr.write("Thinking:\n");
+  }
+  const result = await ask(question, {
+    onThinking: showThinking
+      ? (chunk) => {
+          streamedThinking = true;
+          process.stderr.write(chunk);
+        }
+      : undefined,
+  });
+  if (showThinking) {
+    if (!streamedThinking) {
+      const trace =
+        result.thinking.length > 0
+          ? result.thinking
+          : "(none — no reasoning field or <think> block)";
+      process.stderr.write(trace);
+    }
+    process.stderr.write("\n\n");
+  }
+  const sources =
+    result.citations.length > 0 ? result.citations.join(", ") : "(none)";
+  process.stdout.write(
+    `${result.answer}\n\nSources: ${sources}\n${formatThoughtDuration(result.elapsedMs)}\n`,
+  );
+  process.exit(0);
+}
+
+if (command === "eval") {
   process.stdout.write(USAGE);
   process.stderr.write(`Command "${command}" is stubbed until a later milestone.\n`);
   process.exit(0);
