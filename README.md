@@ -83,6 +83,22 @@ The DeepEval **judge** does not follow that URL. It uses `OLLAMA_HOST` + `JUDGE_
 
 Detail: [`knowledge/SOURCES.md`](knowledge/SOURCES.md). Why no ranker: [decision 1](docs/decisions.md#1-no-retrieval-layer-and-no-index--send-both-full-documents).
 
+### Conflict in the material
+
+The brief asked for one real conflict, gap, or stale fact, and what happens when a question lands on it. This slice uses a **title that differs between CV and LinkedIn**. There is no overlapping date range and no unfinished-project fixture.
+
+| Source | Coda title |
+| --- | --- |
+| `fixtures/cv.md` | Senior Software Engineer (Lead) |
+| `fixtures/linkedin.md` | Lead Software Engineer (header comment: `synthetic: title conflict`) |
+
+When a question hits that (`What is your title at Coda?`, `Are you a senior engineer?`):
+
+1. `retrieveAll()` sends **both** full documents. The query is unused, so LinkedIn cannot be dropped.
+2. The system prompt says: if sources disagree, report both and name the sources. Do not pick a winner. No “LinkedIn is newer” rule.
+3. The CLI prints the answer plus `Sources: cv, linkedin` (or whichever ids the model cited).
+4. Eval on this question is flaky and model-dependent. `qwen3:4b` names both titles; `llama3.1:8b` often does not. Policy is unchanged: report both wordings, no winner. See [decision 3](docs/decisions.md#3-conflicts-are-reported-not-resolved).
+
 ## Architecture
 
 ```
@@ -125,21 +141,21 @@ Two metrics (numerator / denominator / pass):
 
 Faithfulness is out of scope (M6b). It would not catch the money-shaped miss: agreeing that Data Hub was ~20M when the knowledge says 12M.
 
-Last run (2026-09-03, generator `qwen3:4b`, judge `llama3.1:8b`, ~315s): **17 / 22**. Product misses written up: `working-style` (invented a leadership style), `round-up-metrics` (agreed with 20M). `are-you-senior` also collapsed the title conflict to `Yes`. Human vs 8B spot-check: 4 / 5 agree; the disagreement is the judge scoring retrieval context as if it were the answer.
+Last run (2026-09-03, generator `qwen3:4b`, judge `llama3.1:8b`, ~315s): **17 / 22**. Product misses written up: `working-style` (invented a leadership style), `round-up-metrics` (agreed with 20M). Title conflict (`coda-title`, `are-you-senior`) is flaky and model-dependent: `qwen3:4b` answers it well, `llama3.1:8b` as generator does not. Human vs 8B spot-check: 4 / 5 agree; the disagreement is the judge scoring retrieval context as if it were the answer.
 
 ## Limitations, production, 100×
 
-**Now.** 4B generator still fails three grounded cases. 8B judge jitters around 0.60 on short correct answers. Full-doc retrieve will not survive a third large source. Contact lines are synthetic; the title conflict is labelled synthetic.
+**Now.** 4B generator still fails `working-style` and `round-up-metrics`. Title conflict is flaky across models. 8B judge jitters around 0.60 on short correct answers. Full-doc retrieve will not survive a third large source. Contact lines are synthetic; the title conflict is labelled synthetic.
 
 `working-style` is a **refuse** even though the brief names “how you approach your work.” The Summary’s OKR sentence is lead-scope language, not a working-style claim. Sourced facts (hiring committee, mentoring, end-to-end delivery) can answer “what have you owned”; we will not infer “I’m a servant leader.” That golden is strict on purpose. If a reviewer wants the Summary treated as working style, the golden should change, not the refuse rule.
 
-**Before production.** Fix `round-up-metrics` and `are-you-senior`. Stop filling citations with every retrieved id. Do not point `OPENAI_BASE_URL` at a hosted API without treating the prompt as personal data (see privacy). Add Faithfulness only after those LabelContract misses are understood.
+**Before production.** Fix `round-up-metrics`. Stop filling citations with every retrieved id. Do not point `OPENAI_BASE_URL` at a hosted API without treating the prompt as personal data (see privacy). Add Faithfulness only after those LabelContract misses are understood.
 
 **What breaks first at 100× traffic.** Not QPS. This process is serial local inference. 100× *corpus* blows the context window and the “send everything” retrieve. 100× *questions* queues on one Ollama daemon (p95 already seconds, see below). The first production change is a coverage-preserving retrieve (every employer, every source that can contradict), not a vector DB, plus a hosted generator only after a privacy review.
 
 **Next three**
 
-1. Fix the three generator misses: refuse `working-style`, correct Data Hub to 12M, name both titles on `are-you-senior`.
+1. Fix the generator misses: refuse `working-style`, correct Data Hub to 12M.
 2. Add Faithfulness (M6b) only after those LabelContract misses are understood — and keep LabelContract as the metric that catches wrong-in-KB numbers.
 3. Nightly GEval on frozen goldens, plus one hosted-model smoke via `OPENAI_BASE_URL`. Do not auto-rewrite goldens from a run.
 

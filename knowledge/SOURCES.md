@@ -22,6 +22,17 @@ Edit this file when a fixture is added or replaced.
 
 Keep ids `cv` and `linkedin`.
 
+## Conflict
+
+The planted disagreement is the Coda title, not overlapping dates or an unfinished project.
+
+- CV: Senior Software Engineer (Lead)
+- LinkedIn: Lead Software Engineer (`<!-- synthetic: title conflict ... -->`)
+
+A question that lands on it still gets both full sources. The model is told to name both wordings and not pick a winner. Eval on `coda-title` / `are-you-senior` is flaky and model-dependent: `qwen3:4b` does this well, `llama3.1:8b` as generator does not.
+
+
+
 ## Limits
 
 Split is `##` only, so roles under `###` stay in Employment History. Every question gets both sources in full.

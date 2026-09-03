@@ -64,7 +64,7 @@ The failure mode is not “no hit.” It is a **confident, incomplete** answer: 
 
 **Why not “most recent source wins”.** That is a policy pretending to be retrieval. The caller should see both wordings.
 
-**Consequences.** Yes/no questions are a known failure mode (`are-you-senior` answered `Yes` on the last run). That is a generator miss, not a reason to relax the policy.
+**Consequences.** Eval on the title conflict is flaky and model-dependent. `qwen3:4b` names both wordings; `llama3.1:8b` as generator often does not. Policy is unchanged.
 
 ---
 
