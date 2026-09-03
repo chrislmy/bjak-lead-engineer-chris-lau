@@ -153,9 +153,9 @@ Last run (2026-09-03, generator `qwen3:4b`, judge `llama3.1:8b`, ~315s): **17 / 
 
 **What breaks first at 100× traffic.** Not QPS. This process is serial local inference. 100× *corpus* blows the context window and the “send everything” retrieve. 100× *questions* queues on one Ollama daemon (p95 already seconds, see below). The first production change is a coverage-preserving retrieve (every employer, every source that can contradict), not a vector DB, plus a hosted generator only after a privacy review.
 
-**Next three**
+**Next three things I would do**
 
-1. Fix the generator misses: refuse `working-style`, correct Data Hub to 12M.
+1. Tidy up the eval suite — goldens and judge prompts so they match reality. Some of that was AI-assisted because of the time box.
 2. Add Faithfulness (M6b) only after those LabelContract misses are understood — and keep LabelContract as the metric that catches wrong-in-KB numbers.
 3. Nightly GEval on frozen goldens, plus one hosted-model smoke via `OPENAI_BASE_URL`. Do not auto-rewrite goldens from a run.
 
@@ -179,22 +179,17 @@ Two comments I would leave:
 
 ## One thing I would not let a model decide
 
-The Coda title. The CV says Senior Software Engineer (Lead); LinkedIn says Lead Software Engineer. A generator will pick one. The system prompt, two goldens, and the judge steps all say: name both, no winner. I also would not let a model move the 0.7 pass bar after seeing scores, or rewrite `mustContain` to match whatever it just said.
+Design. Architecture, retrieve-all vs an index, conflict policy, which metrics to run, the 0.7 pass bar, and the goldens are mine. A model may draft code and judge-prompt wording; I review it, change it, and I score whether the system holds the line. I would not let it pick a title winner, move the pass bar after seeing scores, or rewrite `mustContain` to match whatever it just said.
 
 ## Money-movement and continuous eval
 
-If this assistant sat next to balances or event counts, the analogue of a bad pay-out is `round-up-metrics`: the user supplies a friendlier number, the model agrees, Faithfulness can still look clean because the lie is agreement, not invention.
+On a CV, a wrong title is embarrassing. Next to money, a wrong number is a pay-out you cannot undo. That is the cost of being wrong.
 
-What I would actually run:
+The miss I care about is `round-up-metrics`: knowledge says 12M, the user says ~20M, the model agrees. Nothing was invented, so Faithfulness can still pass. I would treat that class (wrong amount, wrong identity) as a hard fail. Ocado scoring 0.60 on a correct name is jitter; I would not block a merge on it.
 
-| Layer | When | What |
-| --- | --- | --- |
-| Unit tests (`npm test`) | Every PR | JSON parse, retrieve both sources, golden shape, GEval steps present |
-| GEval suite (`npm run eval`) | Nightly | Frozen goldens; LabelContract on amount/identity cases is the gate |
-| Golden edits | Human PR only | No job that mutates `eval/golden.json` from model output |
-| Merge gate | Not the 8B judge | Jitter (Ocado 0.60 on a correct name) must not block; product misses must |
+For money I would not rely on 22 GEval stories. I would keep a **small, strict golden** — a handful of amount and identity cases with an exact figure or id, not a paragraph of “must contain.” In front of any judge I would put **deterministic tests**: the parsed amount has to match the retrieved record, a missing field is a refuse, agreeing with a number that is not in the knowledge fails the build. No LLM in that path. That suite is a **hard CI gate**: it runs on every commit, and a fail **blocks merge**. GEval can still score the prose on a nightly; it does not get to pass a wrong 20M, and Ocado-style jitter does not get to block.
 
-Local eval cost is $0. Do not “fix” a nightly fail by loosening `mustNotClaim`.
+Continuously: deterministic checks on every PR (block on fail). `npm run eval` nightly on frozen goldens. Only a human edits `eval/golden.json`. If the nightlies fail, I do not “fix” it by loosening `mustNotClaim`.
 
 ## Latency and cost
 
