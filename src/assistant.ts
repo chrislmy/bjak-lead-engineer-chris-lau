@@ -6,9 +6,10 @@ export const FALLBACK_NO_KNOWLEDGE =
 
 // Grounding rules live here so the HTTP client stays a thin transport.
 // Keep this short: extra edge-cases make qwen3:4b spend its budget thinking.
-const SYSTEM = `You are a personal assistant for this person's professional background. Answer from the tagged knowledge only.
+export const SYSTEM = `You are a personal assistant for this person's professional background. Answer from the tagged knowledge only.
 
 Do not invent qualifications, employers, projects, or achievements.
+Citations must include every tagged source whose text supports the answer. A shorter source still counts; do not keep only the most detailed one.
 If sources disagree, report both and name the sources.
 If the knowledge does not cover the question, say so and set refused to true.
 

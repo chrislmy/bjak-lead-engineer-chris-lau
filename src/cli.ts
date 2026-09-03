@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { ask, formatThoughtDuration } from "./assistant.ts";
 import { ingestAll } from "./sources/index.ts";
@@ -16,7 +17,7 @@ Commands:
   ingest   Rebuild knowledge/<source>/ section files and MANIFEST.md from fixtures
   ask      Answer a question from retrieved knowledge
            --think   print model reasoning on stderr
-  eval     Run the golden evaluation (not implemented yet)
+  eval     Score goldens with DeepEval GEval (LabelContract + RefusalInjection)
 
 Generator model: ${env.openaiModel}
 Judge model:     ${env.judgeModel}
@@ -83,9 +84,16 @@ if (command === "ask") {
 }
 
 if (command === "eval") {
-  process.stdout.write(USAGE);
-  process.stderr.write(`Command "${command}" is stubbed until a later milestone.\n`);
-  process.exit(0);
+  const result = spawnSync(
+    "npx",
+    ["vitest", "run", "eval/assistant.eval.ts"],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+      env: { ...process.env, DEEPEVAL_TELEMETRY_OPT_OUT: "1" },
+    },
+  );
+  process.exit(result.status === null ? 1 : result.status);
 }
 
 process.stderr.write(`Unknown command: ${command}\n\n${USAGE}`);

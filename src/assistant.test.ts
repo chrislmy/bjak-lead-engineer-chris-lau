@@ -5,6 +5,7 @@ import {
   formatUserMessage,
   parseModelJson,
   splitThink,
+  SYSTEM,
 } from "./assistant.ts";
 
 const ids = ["cv", "linkedin"];
@@ -117,6 +118,13 @@ describe("parseModelJson", () => {
     );
     assert.equal(result.answer, "ClickHouse cluster");
     assert.deepEqual(result.citations, ["cv"]);
+  });
+});
+
+describe("SYSTEM", () => {
+  it("tells the model not to drop a shorter source", () => {
+    assert.match(SYSTEM, /every tagged source whose text supports the answer/i);
+    assert.match(SYSTEM, /A shorter source still counts/i);
   });
 });
 

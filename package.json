@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "assistant": "tsx src/cli.ts",
-    "test": "tsx --test src/assistant.test.ts src/sources/retrieve.test.ts"
+    "test": "tsx --test src/assistant.test.ts src/sources/retrieve.test.ts eval/golden.test.ts eval/geval.test.ts",
+    "eval": "vitest run eval/assistant.eval.ts",
+    "postinstall": "node scripts/patch-deepeval-telemetry.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -15,8 +17,12 @@
     "openai": "^7.8.0"
   },
   "devDependencies": {
+    "@sentry/node": "^10.73.0",
     "@types/node": "^22.13.10",
+    "deepeval": "^0.9.13",
+    "ollama": "^0.6.3",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^4.1.11"
   }
 }

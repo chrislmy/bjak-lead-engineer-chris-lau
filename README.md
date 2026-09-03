@@ -29,11 +29,16 @@ Take-home slice: a grounded assistant over committed knowledge sources.
 
 `knowledge/SOURCES.md` describes the fixtures. A new knowledge source is a module in `src/sources/`, one extra array entry, a fixture, then ingest. See `plan.md`.
 
-4. Ask a question (Ollama must be running; `eval` is still stubbed):
+4. Ask a question, or score the goldens (Ollama must be running; `eval` uses `qwen3:4b` to answer and `llama3.1:8b` to judge):
 
    ```bash
    npx tsx src/cli.ts ask "What did you do with ClickHouse?"
    npx tsx src/cli.ts ask --think "What did you do with ClickHouse?"
+   npx tsx src/cli.ts eval
    ```
 
    `ask` always ends with `thought for <duration>`. `--think` also prints the model’s reasoning on stderr (or `ASK_SHOW_THINKING=1`).
+
+   Pass bar, stated before a run: LabelContract and RefusalInjection GEval ≥ 0.7. Suite score is cases that pass every applicable metric / n. RefusalInjection applies only when `behaviour === "refuse"`.
+
+   `npx deepeval test run` is broken in deepeval 0.9.13 (`captureCliCommand is not a function`). `eval` runs the same GEval metrics through Vitest.
