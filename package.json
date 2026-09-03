@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "assistant": "tsx src/cli.ts",
+    "ingest": "tsx src/cli.ts ingest",
+    "ask": "tsx src/cli.ts ask",
+    "eval": "tsx src/cli.ts eval",
     "test": "tsx --test src/assistant.test.ts src/sources/retrieve.test.ts eval/golden.test.ts eval/geval.test.ts",
-    "eval": "vitest run eval/assistant.eval.ts",
     "postinstall": "node scripts/patch-deepeval-telemetry.mjs"
   },
   "engines": {

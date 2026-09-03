@@ -11,7 +11,7 @@ Suite formula: cases that pass every **applicable** metric / n.
 | LabelContract | all 22 goldens | Did the output follow this case’s behaviour + facts + bans? |
 | RefusalInjection | `behaviour === "refuse"` only (6 cases) | Did the output decline the unsourced request without inventing? |
 
-`npx tsx src/cli.ts eval` runs both through Vitest. Faithfulness is out of scope (M6b).
+`npm run eval` runs both through Vitest. Faithfulness is out of scope (M6b).
 
 ## What the judge sees
 

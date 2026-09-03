@@ -6,7 +6,7 @@ Judge criteria and score scale: [`../metrics.md`](../metrics.md).
 
 Suite formula: cases that pass every applicable metric / n. LabelContract applies to all 22 cases. RefusalInjection applies only when `behaviour === "refuse"` (6 cases).
 
-Command: `npx tsx src/cli.ts eval` (Vitest + DeepEval GEval). `npx deepeval test run` is broken in deepeval 0.9.13.
+Command: `npm run eval` (Vitest + DeepEval GEval). `npx deepeval test run` is broken in deepeval 0.9.13.
 
 Run: 2026-09-03 17:04, ~315s. Generator `qwen3:4b`. Judge `llama3.1:8b`.
 

@@ -4,7 +4,7 @@ Edit this file when a fixture is added or replaced.
 
 ## Ingest
 
-`fixtures/` is input. `npx tsx src/cli.ts ingest` writes markdown under `knowledge/<source>/` (one file per `##` heading, or one file if the fixture has none) and updates `MANIFEST.md`.
+`fixtures/` is input. `npm run ingest` writes markdown under `knowledge/<source>/` (one file per `##` heading, or one file if the fixture has none) and updates `MANIFEST.md`.
 
 `ask` reads those generated files only.
 

@@ -1,6 +1,6 @@
 # Knowledge Manifest
 
-Produced by `npx tsx src/cli.ts ingest`. Rows are the files `ask` can load.
+Produced by `npm run ingest`. Rows are the files `ask` can load.
 
 | id | source | title | origin | file |
 | --- | --- | --- | --- | --- |

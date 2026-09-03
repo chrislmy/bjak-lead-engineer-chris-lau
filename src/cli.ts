@@ -8,10 +8,10 @@ import { env } from "./env.ts";
 const USAGE = `Personal work-experience assistant
 
 Usage:
-  npx tsx src/cli.ts ingest
-  npx tsx src/cli.ts ask "<question>"
-  npx tsx src/cli.ts ask --think "<question>"
-  npx tsx src/cli.ts eval
+  npm run ingest
+  npm run ask -- "<question>"
+  npm run ask -- --think "<question>"
+  npm run eval
 
 Commands:
   ingest   Rebuild knowledge/<source>/ section files and MANIFEST.md from fixtures
@@ -49,7 +49,7 @@ if (command === "ask") {
   const question = args.filter((arg) => arg !== "--think").join(" ").trim();
   if (question.length === 0) {
     process.stderr.write(
-      `Usage: npx tsx src/cli.ts ask [--think] "<question>"\n`,
+      `Usage: npm run ask -- [--think] "<question>"\n`,
     );
     process.exit(1);
   }

@@ -2,7 +2,7 @@ import { complete, FALLBACK_UNREACHABLE, ModelUnreachableError } from "./llm/cli
 import { retrieveAll, type RetrievedSource } from "./sources/index.ts";
 
 export const FALLBACK_NO_KNOWLEDGE =
-  "No knowledge loaded. Run `npx tsx src/cli.ts ingest` first. I won't guess from an empty context.";
+  "No knowledge loaded. Run `npm run ingest` first. I won't guess from an empty context.";
 
 // Grounding rules live here so the HTTP client stays a thin transport.
 // Keep this short: extra edge-cases make qwen3:4b spend its budget thinking.

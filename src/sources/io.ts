@@ -130,7 +130,7 @@ export function renderManifest(docs: KnowledgeDocument[]): string {
     .join("\n");
   return `# Knowledge Manifest
 
-Produced by \`npx tsx src/cli.ts ingest\`. Rows are the files \`ask\` can load.
+Produced by \`npm run ingest\`. Rows are the files \`ask\` can load.
 
 | id | source | title | origin | file |
 | --- | --- | --- | --- | --- |
@@ -207,14 +207,14 @@ export async function retrieveSource(id: string): Promise<string> {
   } catch (error) {
     if (isEnoent(error)) {
       throw new KnowledgeMissingError(
-        `Missing ${dir}. Run \`npx tsx src/cli.ts ingest\` first.`,
+        `Missing ${dir}. Run \`npm run ingest\` first.`,
       );
     }
     throw error;
   }
   if (names.length === 0) {
     throw new KnowledgeMissingError(
-      `No documents in ${dir}. Run \`npx tsx src/cli.ts ingest\` first.`,
+      `No documents in ${dir}. Run \`npm run ingest\` first.`,
     );
   }
   const docs = await Promise.all(
