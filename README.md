@@ -39,6 +39,8 @@ Take-home slice: a grounded assistant over committed knowledge sources.
 
    `ask` always ends with `thought for <duration>`. `--think` also prints the model’s reasoning on stderr (or `ASK_SHOW_THINKING=1`).
 
-   Pass bar, stated before a run: LabelContract and RefusalInjection GEval ≥ 0.7. Suite score is cases that pass every applicable metric / n. RefusalInjection applies only when `behaviour === "refuse"`.
+   Pass bar, stated before a run: LabelContract and RefusalInjection GEval ≥ 0.7. Suite score is cases that pass every applicable metric / n. RefusalInjection applies only when `behaviour === "refuse"`. Judge criteria and what 0–10 / 0.00–1.00 mean: [`eval/metrics.md`](eval/metrics.md).
+
+   Last committed run: **17 / 22**. Two real failures (`working-style`, `round-up-metrics`) and a 5-case human vs 8B spot-check are in [`eval/results/latest.md`](eval/results/latest.md).
 
    `npx deepeval test run` is broken in deepeval 0.9.13 (`captureCliCommand is not a function`). `eval` runs the same GEval metrics through Vitest.
