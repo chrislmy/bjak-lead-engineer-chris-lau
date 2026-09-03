@@ -29,7 +29,7 @@ The planted disagreement is the Coda title, not overlapping dates or an unfinish
 - CV: Senior Software Engineer (Lead)
 - LinkedIn: Lead Software Engineer (`<!-- synthetic: title conflict ... -->`)
 
-A question that lands on it still gets both full sources. The model is told to name both wordings and not pick a winner. Eval on `coda-title` / `are-you-senior` is flaky and model-dependent: `qwen3:4b` does this well, `llama3.1:8b` as generator does not.
+A question that lands on it still gets both full sources. The model is told to name both wordings and not pick a winner. Eval on `coda-title` / `are-you-senior` is flaky: `qwen3:4b` does this well but thinks too long; shipped `llama3.1:8b` often does not.
 
 
 

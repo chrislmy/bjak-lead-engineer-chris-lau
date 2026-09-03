@@ -16,12 +16,13 @@ Take-home slice: a grounded CLI over two committed knowledge sources. Ask a ques
 
 npm packages the app imports: `openai`, `dotenv`. Eval also uses `deepeval`, `vitest`, and `ollama` (judge client).
 
-1. Pull the generator and judge:
+1. Pull the model used for both `ask` and the judge:
 
    ```bash
-   ollama pull qwen3:4b
    ollama pull llama3.1:8b
    ```
+
+   `qwen3:4b` answers some goldens better (especially the title conflict) but spends a long time thinking. This slice uses `llama3.1:8b` for generator and judge. Optional: `ollama pull qwen3:4b` and set `OPENAI_MODEL=qwen3:4b`.
 
 2. Copy environment defaults (no real secrets required for local Ollama). `.npmrc` uses the public npm registry.
 
@@ -39,7 +40,7 @@ npm packages the app imports: `openai`, `dotenv`. Eval also uses `deepeval`, `vi
 
 `knowledge/SOURCES.md` is the collect / clean / structure / index note. A new knowledge source is a module in `src/sources/`, one extra array entry, a fixture, then ingest.
 
-4. Ask a question, or score the goldens (Ollama must be running; `eval` uses `qwen3:4b` to answer and `llama3.1:8b` to judge):
+4. Ask a question, or score the goldens (Ollama must be running; `eval` uses `llama3.1:8b` to answer and to judge):
 
    ```bash
    npm run ask -- "What did you do with ClickHouse?"
@@ -97,7 +98,7 @@ When a question hits that (`What is your title at Coda?`, `Are you a senior engi
 1. `retrieveAll()` sends **both** full documents. The query is unused, so LinkedIn cannot be dropped.
 2. The system prompt says: if sources disagree, report both and name the sources. Do not pick a winner. No “LinkedIn is newer” rule.
 3. The CLI prints the answer plus `Sources: cv, linkedin` (or whichever ids the model cited).
-4. Eval on this question is flaky and model-dependent. `qwen3:4b` names both titles; `llama3.1:8b` often does not. Policy is unchanged: report both wordings, no winner. See [decision 3](docs/decisions.md#3-conflicts-are-reported-not-resolved).
+4. Eval on this question is flaky. `qwen3:4b` names both titles but thinks too long; `llama3.1:8b` (what we ship) often does not. Policy is unchanged: report both wordings, no winner. See [decision 3](docs/decisions.md#3-conflicts-are-reported-not-resolved).
 
 ## Architecture
 
@@ -108,7 +109,7 @@ fixtures/cv.md  fixtures/linkedin.md
 knowledge/<source>/*.md   knowledge/MANIFEST.md
         │  retrieveAll() — both sources, query unused
         ▼
-ask() → OpenAI SDK → Ollama qwen3:4b
+ask() → OpenAI SDK → Ollama llama3.1:8b
         ▼
 stdout: answer, Sources, thought for <duration>
 ```
@@ -127,7 +128,7 @@ Why this shape: two documents fit in one prompt. An index would answer “What d
 | Eval | DeepEval GEval only; `mustContain` is a judge label, not a substring lint |
 | Store | Markdown fixtures in, tagged markdown out — not YAML-as-source |
 
-**Switch rule.** Keep `qwen3:4b` until prompt work is exhausted and LabelContract still fails `round-up-metrics` or `are-you-senior`. Then a larger local instruct model, then a hosted mini. Switch the judge only if the human vs 8B spot-check on the same five cases drops below 4/5.
+**Switch rule.** Shipped generator is `llama3.1:8b` (same model as the judge). `qwen3:4b` was better on some answers but thought too much for this time box. I would switch back to qwen3, or to a hosted mini, if LabelContract on `round-up-metrics` or the title conflict stays red after prompt work. Switch the judge only if the human vs 8B spot-check on the same five cases drops below 4/5.
 
 ## Eval
 
@@ -141,11 +142,11 @@ Two metrics (numerator / denominator / pass):
 
 Faithfulness is out of scope (M6b). It would not catch the money-shaped miss: agreeing that Data Hub was ~20M when the knowledge says 12M.
 
-Last run (2026-09-03, generator `qwen3:4b`, judge `llama3.1:8b`, ~315s): **17 / 22**. Product misses written up: `working-style` (invented a leadership style), `round-up-metrics` (agreed with 20M). Title conflict (`coda-title`, `are-you-senior`) is flaky and model-dependent: `qwen3:4b` answers it well, `llama3.1:8b` as generator does not. Human vs 8B spot-check: 4 / 5 agree; the disagreement is the judge scoring retrieval context as if it were the answer.
+Last run (2026-09-03, generator and judge `llama3.1:8b`, ~315s): **17 / 22**. Product misses written up: `working-style` (invented a leadership style), `round-up-metrics` (agreed with 20M). Title conflict (`coda-title`, `are-you-senior`) is flaky: `qwen3:4b` answers it well but thinks for too long; `llama3.1:8b` as generator often does not name both titles. Human vs 8B spot-check: 4 / 5 agree; the disagreement is the judge scoring retrieval context as if it were the answer.
 
 ## Limitations, production, 100×
 
-**Now.** 4B generator still fails `working-style` and `round-up-metrics`. Title conflict is flaky across models. 8B judge jitters around 0.60 on short correct answers. Full-doc retrieve will not survive a third large source. Contact lines are synthetic; the title conflict is labelled synthetic.
+**Now.** `llama3.1:8b` still fails `working-style` and `round-up-metrics`. Title conflict is better on `qwen3:4b`, which we did not ship because of think time. 8B judge jitters around 0.60 on short correct answers. Full-doc retrieve will not survive a third large source. Contact lines are synthetic; the title conflict is labelled synthetic.
 
 `working-style` is a **refuse** even though the brief names “how you approach your work.” The Summary’s OKR sentence is lead-scope language, not a working-style claim. Sourced facts (hiring committee, mentoring, end-to-end delivery) can answer “what have you owned”; we will not infer “I’m a servant leader.” That golden is strict on purpose. If a reviewer wants the Summary treated as working style, the golden should change, not the refuse rule.
 
@@ -207,7 +208,7 @@ Cursor agents wrote most of the TypeScript, DeepEval wiring, and judge-prompt dr
 
 What I changed after reviewing generated code:
 
-- Cut the system prompt so `qwen3:4b` stops spending its budget on extra edge cases.
+- Cut the system prompt after `qwen3:4b` spent its budget thinking; we then ran `llama3.1:8b` for both `ask` and the judge.
 - Rewrote GEval `evaluationSteps` after the 8B judge scored retrieval context as if it were the answer.
 - Kept `mustContain` as judge labels, not a substring linter the model had started to imply.
 - Added the telemetry stub when `npx deepeval test run` died on `captureCliCommand`.

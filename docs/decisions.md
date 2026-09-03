@@ -44,13 +44,13 @@ The failure mode is not “no hit.” It is a **confident, incomplete** answer: 
 
 ## 2. OpenAI SDK against Ollama, not an Ollama-only client
 
-**Context.** Local generator is Ollama `qwen3:4b`. A hosted model must remain an env change, not a rewrite.
+**Context.** Local generator and judge are both Ollama `llama3.1:8b`. I tried `qwen3:4b` as generator: better answers on some goldens (title conflict), but it thought for too long. A hosted model must remain an env change, not a rewrite.
 
 **Decision.** `src/llm/client.ts` uses the OpenAI SDK with `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL`. Defaults talk to `http://localhost:11434/v1`. The DeepEval judge uses `OllamaModel` because GEval is wired that way; that is a judge detail, not the product API.
 
 **Why not the Ollama HTTP API for `ask`.** The product path should match any OpenAI-compatible host. Streaming is used only so `--think` can print reasoning; the public contract is still `{ answer, citations, refused }`.
 
-**When I would switch generator.** Prompt work is exhausted and LabelContract still fails the money-shaped or conflict cases (`round-up-metrics`, `are-you-senior`) on a fresh run. Then try a larger local instruct model (8B-class) before a hosted mini. Switch the judge only if the human vs 8B spot-check drops below 4/5 on the same five cases. Do not switch because a blog prefers another name.
+**When I would switch generator.** Back to `qwen3:4b` (or a hosted mini) if think-time is acceptable and LabelContract on `round-up-metrics` or the title conflict stays red on 8B after prompt work. Switch the judge only if the human vs 8B spot-check on the same five cases drops below 4/5. Do not switch because a blog prefers another name.
 
 **Consequences.** Escape hatch: point `OPENAI_BASE_URL` at a hosted API and set a real key. CV text then leaves the machine (see README privacy). Judge remains local unless DeepEval is reconfigured.
 
@@ -58,13 +58,13 @@ The failure mode is not “no hit.” It is a **confident, incomplete** answer: 
 
 ## 3. Conflicts are reported, not resolved
 
-**Context.** The LinkedIn headline is a labelled synthetic conflict with the CV title. A 4B model will pick a winner if allowed.
+**Context.** The LinkedIn headline is a labelled synthetic conflict with the CV title. The generator will pick a winner if allowed.
 
 **Decision.** System prompt, goldens (`coda-title`, `are-you-senior`), and judge steps all require both facts. The assistant must not decide that Lead supersedes Senior, or that “Lead” in parentheses is the same as the LinkedIn headline.
 
 **Why not “most recent source wins”.** That is a policy pretending to be retrieval. The caller should see both wordings.
 
-**Consequences.** Eval on the title conflict is flaky and model-dependent. `qwen3:4b` names both wordings; `llama3.1:8b` as generator often does not. Policy is unchanged.
+**Consequences.** Eval on the title conflict is flaky. `qwen3:4b` names both wordings but thinks too long; shipped `llama3.1:8b` often does not. Policy is unchanged.
 
 ---
 

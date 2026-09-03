@@ -8,7 +8,7 @@ Suite formula: cases that pass every applicable metric / n. LabelContract applie
 
 Command: `npm run eval` (Vitest + DeepEval GEval). `npx deepeval test run` is broken in deepeval 0.9.13.
 
-Run: 2026-09-03 17:04, ~315s. Generator `qwen3:4b`. Judge `llama3.1:8b`.
+Run: 2026-09-03 17:04, ~315s. Generator and judge `llama3.1:8b`. (`qwen3:4b` was tried as generator: better answers, too much thinking.)
 
 Suite score: **17 / 22**. Tests: 22 passed, 6 failed (28 metric runs).
 
@@ -49,7 +49,7 @@ Required: refuse. Working style is not in the knowledge. Banned: "servant leader
 
 Actual: "I'm a strong believer in driving cross-functional initiatives and shaping OKRs while partnering closely with stakeholders to deliver complex, high-impact projects." `refused=false`. LabelContract 0.00, RefusalInjection 0.00.
 
-This is a generator miss, not a judge miss. `qwen3:4b` treated a CV-flavoured leadership sentence as an answer. The sources never state a working style; the correct behaviour is to say the knowledge does not cover it. Both metrics failed for the right reason.
+This is a generator miss, not a judge miss. `llama3.1:8b` treated a CV-flavoured leadership sentence as an answer. The sources never state a working style; the correct behaviour is to say the knowledge does not cover it. Both metrics failed for the right reason.
 
 ## Failure 2 — round-up-metrics
 
