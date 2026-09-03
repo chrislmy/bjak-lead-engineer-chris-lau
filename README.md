@@ -6,7 +6,17 @@ Take-home slice: a grounded CLI over two committed knowledge sources. Ask a ques
 
 ## Setup (under 10 minutes once Ollama is installed)
 
-1. Install [Ollama](https://ollama.com), then pull the generator and judge:
+**You need**
+
+| On the machine | Notes |
+| --- | --- |
+| Node.js 20 or newer | `engines.node` is `>=20`. npm ships with it. |
+| [Ollama](https://ollama.com) | Default generator and judge. Skip only if you point `ask` at another OpenAI-compatible API. |
+| TypeScript, tsx, Vitest, DeepEval | Installed by `npm install` (devDependencies). There is no global `tsc` step. |
+
+npm packages the app imports: `openai`, `dotenv`. Eval also uses `deepeval`, `vitest`, and `ollama` (judge client).
+
+1. Pull the generator and judge:
 
    ```bash
    ollama pull qwen3:4b
@@ -27,7 +37,7 @@ Take-home slice: a grounded CLI over two committed knowledge sources. Ask a ques
    npm run ingest
    ```
 
-`knowledge/SOURCES.md` describes the fixtures. A new knowledge source is a module in `src/sources/`, one extra array entry, a fixture, then ingest.
+`knowledge/SOURCES.md` is the collect / clean / structure / index note. A new knowledge source is a module in `src/sources/`, one extra array entry, a fixture, then ingest.
 
 4. Ask a question, or score the goldens (Ollama must be running; `eval` uses `qwen3:4b` to answer and `llama3.1:8b` to judge):
 
@@ -45,6 +55,34 @@ Take-home slice: a grounded CLI over two committed knowledge sources. Ask a ques
 
    `npx deepeval test run` is broken in deepeval 0.9.13 (`captureCliCommand is not a function`). `eval` runs the same GEval metrics through Vitest.
 
+Reviewer cost: local Ollama only. One eval run is **$0**. No API key of your own unless you point `OPENAI_BASE_URL` at a hosted provider.
+
+### Custom URL, key, and model
+
+`ask` talks to any OpenAI-compatible chat API. Edit `.env` (never commit it):
+
+```bash
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+```
+
+Same three variables work for another local host (`http://localhost:11434/v1`, `OPENAI_API_KEY=ollama`, `OPENAI_MODEL=llama3.1:8b`) or any compatible proxy. `npm run ask` and `npx tsx eval/latency.ts` pick up `OPENAI_MODEL` from `.env`.
+
+The DeepEval **judge** does not follow that URL. It uses `OLLAMA_HOST` + `JUDGE_MODEL` on a local Ollama daemon. Hosted `ask` still means a local 8B judge unless you change that separately. The CV and question leave this machine if `OPENAI_BASE_URL` is not localhost (see Privacy).
+
+
+## Knowledge pipeline
+
+| Step | What shipped |
+| --- | --- |
+| Collect | Real CV copied into `fixtures/cv.md`. LinkedIn is a slim of that CV, not an API export. |
+| Clean | Phone and email replaced with `example.com` / dummy number. LinkedIn headline labelled `synthetic: title conflict`. |
+| Structure | Ingest splits the CV on `##` into tagged markdown under `knowledge/cv/`. LinkedIn stays one file. |
+| Index | None. `retrieveAll()` sends both full sources. The files are the index. |
+
+Detail: [`knowledge/SOURCES.md`](knowledge/SOURCES.md). Why no ranker: [decision 1](docs/decisions.md#1-no-retrieval-layer-and-no-index--send-both-full-documents).
+
 ## Architecture
 
 ```
@@ -61,7 +99,7 @@ stdout: answer, Sources, thought for <duration>
 
 `ingest` is the write path. `ask` never writes knowledge. Each source module exports `ingest()` and `retrieve()`; [`src/sources/index.ts`](src/sources/index.ts) is the registry.
 
-The generator sees tagged documents and a short system prompt: stay in context, refuse if missing, name both sides of a disagreement, JSON only. If Ollama is down or retrieval is empty, the CLI prints a static fallback and does not guess an employer.
+The generator sees tagged documents and a short system prompt: stay in context, refuse if missing, name both sides of a disagreement, JSON only. If Ollama is down, times out (180s), or retrieval is empty, the CLI prints a static fallback and does not guess an employer. Unusable JSON: if `answer` is missing, the parse path refuses rather than echoing citations. Rate limits on local Ollama are treated the same as down.
 
 Why this shape: two documents fit in one prompt. An index would answer “What did you do with ClickHouse?”; it would not answer “summarise your work” or “give me a timeline” — those collapse onto Summary + the latest job. See [decision 1](docs/decisions.md#1-no-retrieval-layer-and-no-index--send-both-full-documents). All five calls: [`docs/decisions.md`](docs/decisions.md).
 
@@ -73,28 +111,47 @@ Why this shape: two documents fit in one prompt. An index would answer “What d
 | Eval | DeepEval GEval only; `mustContain` is a judge label, not a substring lint |
 | Store | Markdown fixtures in, tagged markdown out — not YAML-as-source |
 
+**Switch rule.** Keep `qwen3:4b` until prompt work is exhausted and LabelContract still fails `round-up-metrics` or `are-you-senior`. Then a larger local instruct model, then a hosted mini. Switch the judge only if the human vs 8B spot-check on the same five cases drops below 4/5.
+
 ## Eval
 
-22 frozen goldens in [`eval/golden.json`](eval/golden.json): 8 direct, 3 multi_source, 4 ambiguous, 3 unanswerable, 4 adversarial. Behaviours: answer, refuse, conflict. `round-up-metrics` is adversarial **and** answer, so it is not in the refusal suite.
+22 frozen goldens in [`eval/golden.json`](eval/golden.json): 8 direct, 3 multi_source, 4 ambiguous, 3 unanswerable, 4 adversarial (brief asked for ≥20 and all five categories). Behaviours: answer, refuse, conflict. `round-up-metrics` is adversarial **and** answer, so it is not in the refusal suite.
 
-Two metrics:
+Two metrics (numerator / denominator / pass):
 
-- **LabelContract** — every case. Did the output follow that case’s behaviour, required facts, and bans?
-- **RefusalInjection** — `behaviour === "refuse"` only (6 cases). Did it decline without inventing?
+- **LabelContract** — cases with GEval ≥ 0.7 / 22. Did the output follow that case’s behaviour, required facts, and bans?
+- **RefusalInjection** — refuse cases with GEval ≥ 0.7 / 6. Did it decline without inventing?
+- **Suite** — cases that pass every applicable metric / 22.
 
 Faithfulness is out of scope (M6b). It would not catch the money-shaped miss: agreeing that Data Hub was ~20M when the knowledge says 12M.
 
 Last run (2026-09-03, generator `qwen3:4b`, judge `llama3.1:8b`, ~315s): **17 / 22**. Product misses written up: `working-style` (invented a leadership style), `round-up-metrics` (agreed with 20M). `are-you-senior` also collapsed the title conflict to `Yes`. Human vs 8B spot-check: 4 / 5 agree; the disagreement is the judge scoring retrieval context as if it were the answer.
 
-## Limitations and next three
+## Limitations, production, 100×
 
-**Now.** 4B generator still fails three grounded cases. 8B judge jitters around 0.60 on short correct answers. Full-doc retrieve will not survive a third large source. Goldens are 22, not the planned 25 (cut one multi_source, one unanswerable, one adversarial). Contact lines are synthetic; the title conflict is labelled synthetic.
+**Now.** 4B generator still fails three grounded cases. 8B judge jitters around 0.60 on short correct answers. Full-doc retrieve will not survive a third large source. Contact lines are synthetic; the title conflict is labelled synthetic.
+
+`working-style` is a **refuse** even though the brief names “how you approach your work.” The Summary’s OKR sentence is lead-scope language, not a working-style claim. Sourced facts (hiring committee, mentoring, end-to-end delivery) can answer “what have you owned”; we will not infer “I’m a servant leader.” That golden is strict on purpose. If a reviewer wants the Summary treated as working style, the golden should change, not the refuse rule.
+
+**Before production.** Fix `round-up-metrics` and `are-you-senior`. Stop filling citations with every retrieved id. Do not point `OPENAI_BASE_URL` at a hosted API without treating the prompt as personal data (see privacy). Add Faithfulness only after those LabelContract misses are understood.
+
+**What breaks first at 100× traffic.** Not QPS. This process is serial local inference. 100× *corpus* blows the context window and the “send everything” retrieve. 100× *questions* queues on one Ollama daemon (p95 already seconds, see below). The first production change is a coverage-preserving retrieve (every employer, every source that can contradict), not a vector DB, plus a hosted generator only after a privacy review.
 
 **Next three**
 
 1. Fix the three generator misses: refuse `working-style`, correct Data Hub to 12M, name both titles on `are-you-senior`.
 2. Add Faithfulness (M6b) only after those LabelContract misses are understood — and keep LabelContract as the metric that catches wrong-in-KB numbers.
 3. Nightly GEval on frozen goldens, plus one hosted-model smoke via `OPENAI_BASE_URL`. Do not auto-rewrite goldens from a run.
+
+## Privacy and secrets
+
+| Question | Default (local Ollama) | Hosted escape hatch |
+| --- | --- | --- |
+| Where secrets live | `.env`, gitignored. `OPENAI_API_KEY=ollama` is a dummy. | Real provider key in `.env` only. |
+| What leaves this machine | Nothing. Prompt stays on `localhost:11434`. | Full CV + LinkedIn + question, to that provider. |
+| Retain / train | N/A (your disk, your daemon). | Whatever that provider’s policy says. Assume retain until you have a DPA. |
+
+`.env.example` names every variable. No real keys are committed. Eval sends answers and retrieval context to the local 8B judge only.
 
 ## If I reviewed this PR
 
@@ -127,16 +184,23 @@ Local eval cost is $0. Do not “fix” a nightly fail by loosening `mustNotClai
 
 Local generator and judge: **$0 / question** (electricity aside).
 
-Hosted escape hatch: same OpenAI client, `OPENAI_BASE_URL` + key. Both sources plus the system prompt are roughly 2.5–3k input tokens and a short JSON answer. At gpt-4o-mini list prices ($0.15 / 1M input, $0.60 / 1M output, Aug 2026) that is on the order of **$0.0005 per question**, not including a hosted judge.
+Hosted escape hatch: same OpenAI client, `OPENAI_BASE_URL` + key. Both sources plus the system prompt are roughly 2.5–3k input tokens and a short JSON answer. At gpt-4o-mini list prices ($0.15 / 1M input, $0.60 / 1M output, Aug 2026) that is on the order of **$0.0005 per question**, not including a hosted judge. One local eval run is $0; a hosted eval would be 22 generator calls + 28 judge calls.
 
-Latency: each `ask` prints `thought for <duration>` (model call only). The last full eval was **~315s wall clock for 22 generator answers + 28 GEval calls** (~14s mean including the 8B judge). A dedicated ask-only p95 was not sampled in this write-up; use the per-question duration line, not the eval total, if you need p95.
+**Ask latency.** `npx tsx eval/latency.ts` uses `OPENAI_MODEL` from `.env` and writes [`eval/results/latency.md`](eval/results/latency.md) with that name on the page. Paste p50/p95 from a run you trust. The last full eval wall clock (~315s for 22 answers + 28 GEval calls) includes the judge; it is not ask p95.
 
 ## AI use
 
-Cursor agents wrote most of the TypeScript, DeepEval wiring, and judge-prompt iterations. I owned the locked calls in `plan.md` and `docs/decisions.md`, the golden set (questions, behaviours, bans), the 0.7 bar before reading scores, the product-vs-jitter split in `eval/results/latest.md`, and the human side of the 5-case spot-check. Goldens were not generated from a model run.
+Greenfield for this exercise. No template, no prior project. DeepEval is a library. `scripts/patch-deepeval-telemetry.mjs` stubs missing telemetry exports so Vitest can run; it is not product code.
+
+Cursor agents wrote most of the TypeScript, DeepEval wiring, and judge-prompt drafts. I owned the locked calls in `plan.md` and `docs/decisions.md`, the golden set, the 0.7 bar before reading scores, the product-vs-jitter split, and the human side of the 5-case spot-check. Goldens were not generated from a model run.
+
+What I changed after reviewing generated code:
+
+- Cut the system prompt so `qwen3:4b` stops spending its budget on extra edge cases.
+- Rewrote GEval `evaluationSteps` after the 8B judge scored retrieval context as if it were the answer.
+- Kept `mustContain` as judge labels, not a substring linter the model had started to imply.
+- Added the telemetry stub when `npx deepeval test run` died on `captureCliCommand`.
 
 ## Time spent
 
-Plan box: ~120 minutes. This overran. The product path (ingest, retrieve, `ask`, CLI) was the smaller part. Most of the extra time was M6: GEval steps, 8B jitter, two failure write-ups, spot-check. This README is M8.
-
-I am not inventing a round hour count. No secrets are committed (`.env` is gitignored; `.env.example` is placeholders).
+Brief box: 120 minutes. Actual: close to **3 hours**. Most of that was planning, eval strategy, and judge/prompt tuning. Ingest / `ask` / CLI were the smaller part. Faithfulness, a UI, and an index stayed cut.
